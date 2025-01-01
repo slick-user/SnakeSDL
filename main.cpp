@@ -3,6 +3,7 @@
 #include <time.h>
 
 #include "Include/SDL2/SDL.h"
+#include "Include/SDL2/SDL_timer.h"
 
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 400
@@ -12,9 +13,20 @@
 #define GRID_WIDTH 50
 #define GRID_HEIGHT 50
 
+SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Rect *Player;
 SDL_Rect Fruit;
+
+void kill() {
+ 
+  //            DEALLOCATION
+  delete[] Player;
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+
+}
 
 void CreateGrid() {
 
@@ -55,7 +67,7 @@ void IncreaseSnake(int &snake_size) {
 void RenderSnake(int &snake_size, int &dir) {
 
   int prev_posx = (*(Player + 0)).x;
-  int prev_posy = (*(Player + 0)).y;
+  int prev_posy = (*(Player + 0)).y; 
 
   if (dir == 1) {
     (*(Player + 0)).y -= 50;
@@ -69,6 +81,21 @@ void RenderSnake(int &snake_size, int &dir) {
   if (dir == 4) {
     (*(Player + 0)).x -= 50;
   }
+
+  // SCREEN WRAPPING
+  if ((*(Player + 0)).x > COLUMNS * GRID_WIDTH - GRID_WIDTH) {
+    (*(Player + 0)).x = 0;
+  } 
+  else if ((*(Player + 0)).x < 0) {
+    (*(Player + 0)).x = COLUMNS * GRID_WIDTH - GRID_WIDTH;
+  }
+
+  if ((*(Player + 0)).y > ROWS * GRID_HEIGHT - GRID_HEIGHT) {
+    (*(Player + 0)).y = 0;
+  }
+  else if ((*(Player + 0)).y < 0) {
+    (*(Player + 0)).y = ROWS * GRID_HEIGHT - GRID_HEIGHT;
+  } 
 
   for (int i=0; i<snake_size; i++) {
     if (i != 0) {
@@ -100,6 +127,7 @@ void movement(const Uint8 *state, SDL_Rect *Player, int &dir) {
   if (state[SDL_SCANCODE_LEFT]) {
     dir = 4;
   }
+
 }
 
 void spawnFruit(){
@@ -124,11 +152,14 @@ void RenderFruit() {
   SDL_SetRenderDrawColor(renderer, 0, 20, 50, 13);
 }
 
-void failstate(SDL_Rect *Player, int &snake_size) {
+bool failstate(SDL_Rect *Player, int &snake_size) {
   for (int i=0; i<snake_size; i++) {
     for (int j=i+1; j<snake_size; j++) {      
       if (Player[j].x == Player[i].x && Player[j].y == Player[i].y) {
         printf("game over");
+        SDL_Delay(1000);
+        kill();
+        return true;
       }
     }
     if (Player[0].x == Fruit.x && Player[0].y == Fruit.y) {
@@ -137,6 +168,7 @@ void failstate(SDL_Rect *Player, int &snake_size) {
       spawnFruit();
     }
   }
+  return false;
 }
 
 int main(int argc, char* args[]){
@@ -146,7 +178,7 @@ int main(int argc, char* args[]){
   //            INITIALIZATION
   SDL_InitSubSystem(SDL_INIT_VIDEO);
 
-  SDL_Window *window = SDL_CreateWindow("Snake Game and hopefully some AI", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
+  window = SDL_CreateWindow("Snake Game and hopefully some AI", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
 
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -181,7 +213,7 @@ int main(int argc, char* args[]){
           break;
       }
 
-      /*switch(event.key.keysym.sym) {
+      switch(event.key.keysym.sym) {
         case SDLK_UP:
           dir = 1;
           break;
@@ -197,31 +229,31 @@ int main(int argc, char* args[]){
         case SDLK_LEFT:
           dir = 4;
           break;
-      }*/
+      }
+    } 
 
-      const Uint8 *state = SDL_GetKeyboardState(NULL);
+    //const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-      movement(state, Player, dir); 
- 
+    //movement(state, Player, dir); 
+
       // RENDER LOOP
-      SDL_RenderClear(renderer);
+    SDL_RenderClear(renderer);
 
-      CreateGrid();
-      RenderSnake(snake_size, dir);
-      RenderFruit();
-      failstate(Player, snake_size);
-
-      SDL_SetRenderDrawColor(renderer, 20, 0, 70, 0);
-      SDL_RenderPresent(renderer);
-      
+    CreateGrid();
+    RenderSnake(snake_size, dir);
+    RenderFruit();
+    if (failstate(Player, snake_size)) {
+      return 0;
     }
+
+    SDL_SetRenderDrawColor(renderer, 20, 0, 70, 0);
+    SDL_RenderPresent(renderer);
+    
+    SDL_Delay(120);
+
   }
   
-  //            DEALLOCATION
-  delete[] Player;
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
-
+  kill();
+ 
   return 0;
 }
