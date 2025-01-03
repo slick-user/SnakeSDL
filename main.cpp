@@ -1,9 +1,7 @@
-#include <cstdlib>
-#include <stdio.h>
+#include <iostream>
 #include <time.h>
 
 #include "Include/SDL2/SDL.h"
-#include "Include/SDL2/SDL_timer.h"
 
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 400
@@ -18,15 +16,9 @@ SDL_Renderer *renderer;
 SDL_Rect *Player;
 SDL_Rect Fruit;
 
-void kill() {
- 
-  //            DEALLOCATION
-  delete[] Player;
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+int score;
 
-}
+void kill();
 
 void CreateGrid() {
 
@@ -34,7 +26,7 @@ void CreateGrid() {
     for (int j=0; j < COLUMNS; j++) {
       SDL_Rect Grid = (SDL_Rect) {j*GRID_WIDTH, i*GRID_HEIGHT, GRID_WIDTH, GRID_HEIGHT};
 
-      SDL_SetRenderDrawColor(renderer, 0, 20, 40, 0);
+      SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
       SDL_RenderDrawRect(renderer, &Grid);
     }
   }
@@ -107,25 +99,7 @@ void RenderSnake(int &snake_size, int &dir) {
       prev_posy = tempy;
     } 
     SDL_RenderFillRect(renderer, &Player[i]);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
-  }
-
-}
-
-// Might Be deprecated and no longer required
-void movement(const Uint8 *state, SDL_Rect *Player, int &dir) {  
-  
-  if (state[SDL_SCANCODE_UP]) {
-    dir = 1;
-  }
-  if (state[SDL_SCANCODE_DOWN]) {
-    dir = 2;
-  }
-  if (state[SDL_SCANCODE_RIGHT]) {
-    dir = 3;
-  }
-  if (state[SDL_SCANCODE_LEFT]) {
-    dir = 4;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
 
 }
@@ -144,19 +118,20 @@ void spawnFruit(){
   Fruit.w = 50;
   Fruit.h = 50;
   SDL_RenderFillRect(renderer, &Fruit);
-  SDL_SetRenderDrawColor(renderer, 0, 20, 50, 13);
+  SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
 }
 
 void RenderFruit() {
   SDL_RenderFillRect(renderer, &Fruit);
-  SDL_SetRenderDrawColor(renderer, 0, 20, 50, 13);
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 }
 
 bool failstate(SDL_Rect *Player, int &snake_size) {
   for (int i=0; i<snake_size; i++) {
-    for (int j=i+1; j<snake_size; j++) {      
+    for (int j=i+1; j<snake_size - 1; j++) {      
       if (Player[j].x == Player[i].x && Player[j].y == Player[i].y) {
-        printf("game over");
+        std::cout << "Game Over: ";
+        std::cout << score;
         SDL_Delay(1000);
         kill();
         return true;
@@ -164,11 +139,22 @@ bool failstate(SDL_Rect *Player, int &snake_size) {
     }
     if (Player[0].x == Fruit.x && Player[0].y == Fruit.y) {
       snake_size += 1;
+      score ++;
       IncreaseSnake(snake_size);
       spawnFruit();
     }
   }
   return false;
+}
+
+void kill() {
+ 
+  //            DEALLOCATION
+  delete[] Player;
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+
 }
 
 int main(int argc, char* args[]){
@@ -199,7 +185,7 @@ int main(int argc, char* args[]){
     (*(Player + i)).h = 50;
 
     SDL_RenderFillRect(renderer, &Player[i]);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 70, 0);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
   }
  
   spawnFruit();      
@@ -232,21 +218,17 @@ int main(int argc, char* args[]){
       }
     } 
 
-    //const Uint8 *state = SDL_GetKeyboardState(NULL);
-
-    //movement(state, Player, dir); 
-
       // RENDER LOOP
     SDL_RenderClear(renderer);
 
     CreateGrid();
-    RenderSnake(snake_size, dir);
     RenderFruit();
+    RenderSnake(snake_size, dir);
     if (failstate(Player, snake_size)) {
       return 0;
     }
 
-    SDL_SetRenderDrawColor(renderer, 20, 0, 70, 0);
+    SDL_SetRenderDrawColor(renderer, 80, 140, 120, 255);
     SDL_RenderPresent(renderer);
     
     SDL_Delay(120);
